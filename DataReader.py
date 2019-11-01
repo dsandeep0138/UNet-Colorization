@@ -2,32 +2,33 @@ import cv2
 import glob
 import numpy as np
 import os
-from pathlib import Path
 import random
 import shutil
 
 
-def train_generator(img_dir, batch_size):
+def data_generator(img_dir, batch_size):
     # Get all the image file names in data_dir
     filenames = glob.glob(data_dir + "/*")
 
     # Set seed for reproducibility
     random.seed(97)
 
+    counter = 0
     while True:
-        x_data = []
-        y_data = []
+        x, y = ([] for _ in xrange(2))
 
         # Randomly shuffle the data
         random.shuffle(filenames)
 
+        if (counter + 1) * batch_size >= len(filenames):
+            counter = 0
+
         for i in range(batch_size):
-            print(filename)
             image = cv2.imread(filenames[i])
 
             # Resize all images to (256, 256, 3)
             image = cv2.resize(image, (256, 256))
-            y_data.append(image)
+            y.append(image)
 
             # Convert to BGR from RGB
             image = image[:, :, ::-1]
@@ -36,13 +37,14 @@ def train_generator(img_dir, batch_size):
             # OpenCV converts L values into the range [0, 255] by L <- L * 255/100
             lab_image = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
             L, _, _ = cv2.split(lab_image)
-            x_data.append(L)
+            x.append(L)
 
         # load all the data into numpy arrays
-        y_data = np.array(y_data)
-        x_data = np.array(x_data)
+        y = np.array(y)
+        x = np.array(x)
 
-        yield (x_data, y_data)
+        yield (x, y)
+        counter += batch_size
 
 
 def load_data(data_dir, test_dir):
