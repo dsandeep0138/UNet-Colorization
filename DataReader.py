@@ -15,7 +15,7 @@ def data_generator(img_dir, batch_size):
 
     counter = 0
     while True:
-        x, y = ([] for _ in xrange(2))
+        x, y = ([] for _ in range(2))
 
         # Randomly shuffle the data
         random.shuffle(filenames)
@@ -48,10 +48,7 @@ def data_generator(img_dir, batch_size):
 
 
 def load_data(data_dir, test_dir):
-    x_train = []
-    y_train = []
-    x_test = []
-    y_test = []
+    x_train, y_train, x_test, y_test = ([] for _ in range(4))
 
     # Get all the image file names in data_dir
     filenames = glob.glob(data_dir + "/*")
