@@ -3,7 +3,6 @@ import glob
 import numpy as np
 import os
 import random
-import shutil
 
 
 def data_generator(img_dir, batch_size):
@@ -24,11 +23,10 @@ def data_generator(img_dir, batch_size):
             counter = 0
 
         for i in range(batch_size):
-            image = cv2.imread(filenames[i])
+            image = cv2.imread(filenames[counter * batch_size + i])
 
             # Resize all images to (256, 256, 3)
             image = cv2.resize(image, (256, 256))
-            y.append(image)
 
             # Convert to BGR from RGB
             image = image[:, :, ::-1]
@@ -36,7 +34,8 @@ def data_generator(img_dir, batch_size):
             # Convert to LAB images from images in BGR format
             # OpenCV converts L values into the range [0, 255] by L <- L * 255/100
             lab_image = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
-            L, _, _ = cv2.split(lab_image)
+            L, A, B = cv2.split(lab_image)
+            y.append([A, B])
             x.append(L)
 
         # load all the data into numpy arrays
@@ -44,7 +43,7 @@ def data_generator(img_dir, batch_size):
         x = np.array(x)
 
         yield (x, y)
-        counter += batch_size
+        counter += 1
 
 
 def load_data(data_dir, test_dir):
@@ -62,7 +61,6 @@ def load_data(data_dir, test_dir):
 
         # Resize all images to (256, 256, 3)
         image = cv2.resize(image, (256, 256))
-        y_train.append(image)
 
         # Convert to BGR from RGB
         image = image[:, :, ::-1]
@@ -70,7 +68,8 @@ def load_data(data_dir, test_dir):
         # Convert to LAB images from images in BGR format
         # OpenCV converts L values into the range [0, 255] by L <- L * 255/100
         lab_image = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
-        L, _, _ = cv2.split(lab_image)
+        L, A, B = cv2.split(lab_image)
+        y_train.append([A, B])
         x_train.append(L)
 
     # load all the data into numpy arrays
@@ -83,10 +82,10 @@ def load_data(data_dir, test_dir):
     for test_file in test_files:
         image = cv2.imread(test_file)
         image = cv2.resize(image, (256, 256))
-        y_test.append(image)
         image = image[:, :, ::-1]
         lab_image = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
-        L, _, _ = cv2.split(lab_image)
+        L, A, B = cv2.split(lab_image)
+        y_test.append([A, B])
         x_test.append(L)
 
     y_test = np.array(y_test)
