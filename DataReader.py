@@ -34,15 +34,14 @@ def data_generator(img_dir, batch_size):
             # Convert to LAB images from images in BGR format
             # OpenCV converts L values into the range [0, 255] by L <- L * 255/100
             lab_image = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
-            L, A, B = cv2.split(lab_image)
-            y.append([A, B])
-            x.append(L)
+            y.append(lab_image[:, :, 1:])
+            x.append(lab_image[:, :, 0])
+
 
         # load all the data into numpy arrays
         y = np.array(y)
-        x = np.array(x)
+        x = np.array(x).reshape((batch_size, 256, 256, 1))
 
-        print("First x and y values")
         yield (x, y)
         counter += 1
 
@@ -69,13 +68,12 @@ def load_data(data_dir, test_dir):
         # Convert to LAB images from images in BGR format
         # OpenCV converts L values into the range [0, 255] by L <- L * 255/100
         lab_image = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
-        L, A, B = cv2.split(lab_image)
-        y_train.append([A, B])
-        x_train.append(L)
+        y_train.append(lab_image[:, :, 1:])
+        x_train.append(lab_image[:, :, 0])
 
     # load all the data into numpy arrays
     y_train = np.array(y_train)
-    x_train = np.array(x_train)
+    x_train = np.array(x_train).reshape((batch_size, 256, 256, 1))
 
     # Similar processing for test data
     test_files = glob.glob(data_dir + "/*")
@@ -85,11 +83,10 @@ def load_data(data_dir, test_dir):
         image = cv2.resize(image, (256, 256))
         image = image[:, :, ::-1]
         lab_image = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
-        L, A, B = cv2.split(lab_image)
-        y_test.append([A, B])
-        x_test.append(L)
+        y_test.append(lab_image[:, :, 1:])
+        x_test.append(lab_image[:, :, 0])
 
     y_test = np.array(y_test)
-    x_test = np.array(x_test)
+    x_test = np.array(x_test).reshape((batch_size, 256, 256, 1))
 
     return x_train, y_train, x_test, y_test
