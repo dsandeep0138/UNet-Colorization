@@ -7,7 +7,7 @@ import random
 
 def data_generator(img_dir, batch_size):
     # Get all the image file names in data_dir
-    filenames = glob.glob(data_dir + "/*")
+    filenames = glob.glob(img_dir + "/*")
 
     # Set seed for reproducibility
     random.seed(97)
@@ -42,6 +42,7 @@ def data_generator(img_dir, batch_size):
         y = np.array(y)
         x = np.array(x)
 
+        print("First x and y values")
         yield (x, y)
         counter += 1
 
