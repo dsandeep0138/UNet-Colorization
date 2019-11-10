@@ -37,7 +37,7 @@ def main():
 
 	model.fit_generator(data_generator(data_dir, 10),
 			steps_per_epoch=len(os.listdir(data_dir)) // 10,
-			epochs=1,
+			epochs=10,
 			callbacks=[tensorboard, checkpoint],
 			verbose=1)		
 
@@ -49,8 +49,8 @@ def main():
 	for i in range(0, len(x_test)):
 		y_pred = model.predict(x_test[i].reshape(1, 256, 256, 1))
 		y_pred = np.dstack((x_test[i], y_pred.reshape(256, 256, 2)))
-		image = cv2.cvtColor(y_pred, cv2.COLOR_LAB2BGR)
-		image = image[:, :, ::-1]
+		y_pred = y_pred.astype(np.uint8)
+		image = cv2.cvtColor(y_pred, cv2.COLOR_LAB2RGB)
 		cv2.imwrite('results/{}.jpg'.format(i), image)
 
 

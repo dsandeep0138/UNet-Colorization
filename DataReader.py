@@ -28,12 +28,9 @@ def data_generator(img_dir, batch_size):
             # Resize all images to (256, 256, 3)
             image = cv2.resize(image, (256, 256))
 
-            # Convert to BGR from RGB
-            image = image[:, :, ::-1]
-
             # Convert to LAB images from images in BGR format
             # OpenCV converts L values into the range [0, 255] by L <- L * 255/100
-            lab_image = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+            lab_image = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
             y.append(lab_image[:, :, 1:])
             x.append(lab_image[:, :, 0])
 
@@ -61,12 +58,9 @@ def load_data(data_dir, test_dir):
         # Resize all images to (256, 256, 3)
         image = cv2.resize(image, (256, 256))
 
-        # Convert to BGR from RGB
-        image = image[:, :, ::-1]
-
         # Convert to LAB images from images in BGR format
         # OpenCV converts L values into the range [0, 255] by L <- L * 255/100
-        lab_image = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+        lab_image = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
         y_train.append(lab_image[:, :, 1:])
         x_train.append(lab_image[:, :, 0])
 
@@ -80,8 +74,7 @@ def load_data(data_dir, test_dir):
     for test_file in test_files:
         image = cv2.imread(test_file)
         image = cv2.resize(image, (256, 256))
-        image = image[:, :, ::-1]
-        lab_image = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+        lab_image = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
         y_test.append(lab_image[:, :, 1:])
         x_test.append(lab_image[:, :, 0])
 
