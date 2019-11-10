@@ -37,7 +37,6 @@ def data_generator(img_dir, batch_size):
             y.append(lab_image[:, :, 1:])
             x.append(lab_image[:, :, 0])
 
-
         # load all the data into numpy arrays
         y = np.array(y)
         x = np.array(x).reshape((batch_size, 256, 256, 1))
@@ -73,10 +72,10 @@ def load_data(data_dir, test_dir):
 
     # load all the data into numpy arrays
     y_train = np.array(y_train)
-    x_train = np.array(x_train).reshape((batch_size, 256, 256, 1))
+    x_train = np.array(x_train).reshape((len(x_train), 256, 256, 1))
 
     # Similar processing for test data
-    test_files = glob.glob(data_dir + "/*")
+    test_files = glob.glob(test_dir + "/*")
 
     for test_file in test_files:
         image = cv2.imread(test_file)
@@ -87,6 +86,6 @@ def load_data(data_dir, test_dir):
         x_test.append(lab_image[:, :, 0])
 
     y_test = np.array(y_test)
-    x_test = np.array(x_test).reshape((batch_size, 256, 256, 1))
+    x_test = np.array(x_test).reshape((len(x_test), 256, 256, 1))
 
     return x_train, y_train, x_test, y_test
