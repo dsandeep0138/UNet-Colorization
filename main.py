@@ -7,6 +7,8 @@ from keras import optimizers
 from keras.callbacks import TensorBoard, ModelCheckpoint
 from Network import UNetRegressor
 from time import time
+import keras.backend as K
+
 
 def main():
 	data_dir = './data/beach'
@@ -16,7 +18,27 @@ def main():
 
 	model = UNetRegressor(64, 3).build_model()
 
-	model.compile(optimizer=optimizers.Adam(lr=0.0001), loss='mse', metrics=["accuracy"])
+	#def quantile_metric(quantile, y_true, y_pred):
+	#	e = y_true - y_pred
+	#	metric = K.mean(K.maximum(quantile * e, (quantile - 1) * e), axis=-1)
+	#	return metric
+
+	#def loss(y_true, y_pred):
+	#	eA = y_true[:, :, :, 0] - y_pred[:, :, :, 0]
+	#	eB = y_true[:, :, :, 1] - y_pred[:, :, :, 1]
+	#	return K.mean(K.square(eA), axis=-1) + K.mean(K.square(eB), axis=-1)
+
+	def huber_loss(y_true, y_pred, clip_delta=1.0):
+		error = y_true - y_pred
+		cond = tf.keras.backend.abs(error) < clip_delta
+		squared_loss = 0.5 * tf.keras.backend.square(error)
+		linear_loss  = clip_delta * (tf.keras.backend.abs(error) - 0.5 * clip_delta)
+
+		return tf.where(cond, squared_loss, linear_loss)
+
+	model.compile(optimizer=optimizers.Adam(lr=0.001),
+			loss=lambda y, f: huber_loss(y, f, clip_delta=0.5),
+			metrics=["accuracy"])
 
 	tensorboard = TensorBoard(log_dir="data/logs/{}".format(time()))
 
@@ -37,7 +59,7 @@ def main():
 
 	model.fit_generator(data_generator(data_dir, 10),
 			steps_per_epoch=len(os.listdir(data_dir)) // 10,
-			epochs=10,
+			epochs=25,
 			callbacks=[tensorboard, checkpoint],
 			verbose=1)		
 
