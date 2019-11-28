@@ -2,19 +2,23 @@ import cv2
 import os
 import numpy as np
 import tensorflow as tf
+import sys
 from DataReader import load_data, data_generator
 from keras import optimizers
 from keras.callbacks import TensorBoard, ModelCheckpoint
 from Network import UNetRegressor
 from time import time
-import keras.backend as K
-
+from properties import Properties
+import keras.backend as K           
 
 def main():
-	data_dir = './data/beach'
-	test_dir = './data/test'
-
-	x_train, y_train, x_test, y_test = load_data(data_dir, test_dir)
+	properties = None    
+	if (len(sys.argv) > 1):
+		properties = Properties(sys.argv[1])
+	else:
+		properties = Properties("Local")
+    
+	x_train, y_train, x_test, y_test = load_data(properties.data_dir, properties.test_dir)
 
 	model = UNetRegressor(64, 3).build_model()
 
@@ -40,28 +44,44 @@ def main():
 			loss=lambda y, f: huber_loss(y, f, clip_delta=0.5),
 			metrics=["accuracy"])
 
-	tensorboard = TensorBoard(log_dir="data/logs/{}".format(time()))
+	log_directory = properties.log_dir+str(time())    
+	tensorboard = TensorBoard(log_dir=log_directory)
 
-	filepath = "data/models/weights-{epoch:02d}-{acc:.2f}.h5"
+	filepath = properties.model_dir+ "weights-{epoch:02d}-{acc:.2f}.h5"
 	checkpoint = ModelCheckpoint(filepath,
 				monitor='acc',
 				verbose=1,
 				save_best_only=True,
 				mode='max')
-
+	y_train_new = formbins(y_train)
+	unique, counts = np.unique(y_train_new, return_counts=True)
+	dictionary = dict(zip(unique, counts))
+	print(dictionary)    
+	#for key in dictionary:
+		#a = key//20
+		#b = key%20
+		#alpha = np.full((256, 256), 13*a + 7)
+		#beta = np.full((256, 256), 13*b + 7)
+		#L = np.full((256, 256), 50)
+		#print(13*a + 7, 13*b + 7) 
+		#image_lab = np.dstack((L, alpha, beta))
+		#print(image_lab.shape)
+		#image_lab = image_lab.astype(np.uint8)
+		#image = cv2.cvtColor(image_lab, cv2.COLOR_Lab2RGB)
+		#outputfileName = properties.results_dir+str(key)+'.jpg'
+		#cv2.imwrite(outputfileName, image)
 	#fit/fit_generator giving OOM when batch_size is high
-	#model.fit(x_train, y_train,
-	#	epochs=1,
-	#	batch_size=128,
-	#	validation_split=0.2,
-	#	callbacks=[tensorboard, checkpoint],
-	#	verbose=1)
+	model.fit(x_train, y_train,
+		epochs=100,
+		batch_size=16,
+		callbacks=[tensorboard, checkpoint],
+		verbose=1)
 
-	model.fit_generator(data_generator(data_dir, 10),
-			steps_per_epoch=len(os.listdir(data_dir)) // 10,
-			epochs=25,
-			callbacks=[tensorboard, checkpoint],
-			verbose=1)		
+	#model.fit_generator(data_generator(data_dir, 10),
+			#steps_per_epoch=len(os.listdir(data_dir)) // 10,
+			#epochs=1,
+			#callbacks=[tensorboard, checkpoint],
+			#verbose=1)		
 
 	#Burn! Burn! Burn! How do I know the corresponding 3rd channel for each prediction?
 	#y_pred = model.predict_generator(data_generator(test_dir, 10),
@@ -73,9 +93,26 @@ def main():
 		y_pred = np.dstack((x_test[i], y_pred.reshape(256, 256, 2)))
 		y_pred = y_pred.astype(np.uint8)
 		image = cv2.cvtColor(y_pred, cv2.COLOR_LAB2RGB)
-		cv2.imwrite('results/{}.jpg'.format(i), image)
+		outputfileName = properties.results_dir+str(i)+'.jpg'        
+		cv2.imwrite(outputfileName, image)
+	
 
-
+    
+def formbins(y_train):
+    bins = np.linspace(0,260,21)
+    y_train_new = []
+    for image_ab in y_train:
+        #Create bins - each bin size is kept as 13 so there are roughly 20 bins from 0 to 255
+        #bins = ([  0.,  13.,  26.,  39.,  52.,  65.,  78.,  91., 104., 117., 130.,
+        #143., 156., 169., 182., 195., 208., 221., 234., 247., 260.])
+        y_train_bin = np.digitize(image_ab, bins)-1 #returns a value in 0 to 19
+        #Bin value is a*20 + b
+        #To extract a & b from value b = bin%20; a = bin/20
+        y_train_bin = y_train_bin[:,:,0]*20+y_train_bin[:,:,1] 
+        y_train_new.append(y_train_bin)
+    return np.transpose(np.array(y_train_new),(1,2,0))
+              
 if __name__ == "__main__":
 	os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 	main()
+
