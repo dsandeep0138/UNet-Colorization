@@ -40,8 +40,38 @@ def main():
 
 		return tf.where(cond, squared_loss, linear_loss)
 
+	def crossentropy_loss(y_true, y_pred):
+		'''
+		bins = np.linspace(0, 260, 21)
+		y_true_new = []
+		for image_ab in y_true:
+			y_binned = np.digitize(image_ab, bins) - 1
+			y_binned = y_binned[:, :, 0] * 20 + y_binned[:, :, 1]
+			wt = np.zeros((256, 256, 2))
+			for i in range(y_binned.shape[0]):
+				for j in range(y_binned.shape[1]):
+        				wt[i][j][0] = weights[y_binned[i][j] - 1]
+        				wt[i][j][1] = weights[y_binned[i][j] - 1]
+
+			y_binned = (y_binned * wt).astype(int)
+			y_binned = np.digitize(y_binned, bins) - 1
+			y_binned = y_binned[:, :, 0] * 20 + y_binned[:, :, 1] 
+
+			y_true_new.append(y_binned)
+		'''
+
+		cross_ent = K.categorical_crossentropy(y_pred, y_true)
+		#cross_ent = K.mean(cross_ent, axis=-1) 
+		return cross_ent
+
+	'''
 	model.compile(optimizer=optimizers.Adam(lr=0.001),
 			loss=lambda y, f: huber_loss(y, f, clip_delta=0.5),
+			metrics=["accuracy"])
+
+	'''
+	model.compile(optimizer=optimizers.Adam(lr=0.001),
+			loss=lambda y, f: crossentropy_loss(y, f),
 			metrics=["accuracy"])
 
 	log_directory = properties.log_dir+str(time())    
@@ -54,9 +84,49 @@ def main():
 				save_best_only=True,
 				mode='max')
 	y_train_new = formbins(y_train)
+	print(y_train.shape)
+	print(y_train_new.shape)
+
 	unique, counts = np.unique(y_train_new, return_counts=True)
-	dictionary = dict(zip(unique, counts))
-	print(dictionary)    
+	#dictionary = dict(zip(unique, counts))
+	#print(len(dictionary))
+
+	weights = 1 - counts / np.sum(counts)
+	weights /= np.sum(weights)
+	
+	dictionary = dict(zip(unique, weights))
+	print(dictionary)
+
+	'''
+	#print(y_train[:, :, :, 0])
+	#print(y_train[:, :, :, 0].shape)
+	weight = np.zeros((1000, 256, 256, 1))
+	bins = np.linspace(0, 260, 21)
+	y_train_new = []
+	for k, image_ab in enumerate(y_train):
+        	#Create bins - each bin size is kept as 13 so there are roughly 20 bins from 0 to 255
+        	#bins = ([  0.,  13.,  26.,  39.,  52.,  65.,  78.,  91., 104., 117., 130.,
+        	#143., 156., 169., 182., 195., 208., 221., 234., 247., 260.])
+		y_train_bin = np.digitize(image_ab, bins)-1 #returns a value in 0 to 19
+		y_train_bin = y_train_bin[:,:,0]*20 + y_train_bin[:,:,1]
+
+		#print(image_ab.shape)
+		#print(y_train_bin.shape)
+		#exit(0)
+
+		for i in range(y_train_bin.shape[0]):
+			for j in range(y_train_bin.shape[1]):
+				weight[k][i][j] = dictionary[y_train_bin[i][j]]
+	
+		#weight = dictionary(y_train_bin)	
+		#print(y_train_bin)
+		#print(y_train_bin.shape)
+		#print(weight)
+		#exit(0)
+
+	#print(weight)
+	'''
+
 	#for key in dictionary:
 		#a = key//20
 		#b = key%20
@@ -71,17 +141,17 @@ def main():
 		#outputfileName = properties.results_dir+str(key)+'.jpg'
 		#cv2.imwrite(outputfileName, image)
 	#fit/fit_generator giving OOM when batch_size is high
-	model.fit(x_train, y_train,
-		epochs=100,
-		batch_size=16,
-		callbacks=[tensorboard, checkpoint],
-		verbose=1)
+	#model.fit(x_train, y_train,
+	#	epochs=1,
+	#	batch_size=16,
+	#	callbacks=[tensorboard, checkpoint],
+	#	verbose=1)
 
-	#model.fit_generator(data_generator(data_dir, 10),
-			#steps_per_epoch=len(os.listdir(data_dir)) // 10,
-			#epochs=1,
-			#callbacks=[tensorboard, checkpoint],
-			#verbose=1)		
+	model.fit_generator(data_generator(properties.data_dir, 10, dictionary),
+			steps_per_epoch=len(os.listdir(properties.data_dir)) // 10,
+			epochs=1,
+			callbacks=[tensorboard, checkpoint],
+			verbose=1)		
 
 	#Burn! Burn! Burn! How do I know the corresponding 3rd channel for each prediction?
 	#y_pred = model.predict_generator(data_generator(test_dir, 10),

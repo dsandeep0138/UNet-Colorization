@@ -3,14 +3,17 @@ import glob
 import numpy as np
 import os
 import random
+from sklearn.preprocessing import OneHotEncoder
+from keras.utils import to_categorical
 
-
-def data_generator(img_dir, batch_size):
+def data_generator(img_dir, batch_size, dictionary):
     # Get all the image file names in data_dir
     filenames = glob.glob(img_dir + "/*")
 
     # Set seed for reproducibility
     random.seed(97)
+
+    #print(weights.shape)
 
     counter = 0
     while True:
@@ -37,6 +40,38 @@ def data_generator(img_dir, batch_size):
         # load all the data into numpy arrays
         y = np.array(y)
         x = np.array(x).reshape((batch_size, 256, 256, 1))
+
+        print(y.shape)
+        print(y[0][0][0])
+
+        bins = np.linspace(0, 260, 21)
+        weights = []
+        cat = []
+        for image_ab in y:
+            y_bin = np.digitize(image_ab, bins) - 1
+            y_bin = y_bin[:, :, 0] * 20 + y_bin[:, :, 1]
+           
+            #print(y_bin.shape)
+            #print(y_bin)
+
+            y_cat = to_categorical(y_bin, num_classes=400)
+            #print(y_cat.shape)
+            #print(y_cat)
+ 
+            y_bin = np.vectorize(dictionary.get)(y_bin)
+            #print(y_bin.shape)
+            #print(y_bin)
+            #exit(0)
+            print(y_cat.shape)
+            cat.append(y_cat)
+            weights.append(y_bin)
+
+        cat = np.array(cat)
+        weights = np.array(weights).reshape((batch_size, 256, 256, 1))
+        print(cat.shape)
+        print(weights.shape)
+        weights = np.concatenate((cat, weights), axis=3)
+        print(weights.shape)
 
         yield (x, y)
         counter += 1
