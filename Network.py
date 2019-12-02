@@ -35,6 +35,7 @@ class UNetRegressor(object):
 				padding='same',
 		         	activation='relu')(conv11)
 
+		conv12 = BatchNormalization()(conv12)
 		conv12_crop = conv12 #Cropping2D(cropping=((42, 42), (42, 42)))(conv12)
 		
 		# Default value of strides is pool_size and this would halve the input.
@@ -53,7 +54,7 @@ class UNetRegressor(object):
 		         	activation='relu')(conv21)
 
 		conv22_crop = conv22 #Cropping2D(cropping=((17, 17), (17, 17)))(conv22)
-		
+		conv22 = BatchNormalization()(conv22)
 		pool2 = MaxPooling2D(pool_size=(2, 2))(conv22)
 
 		conv31 = Conv2D(256,
@@ -67,7 +68,7 @@ class UNetRegressor(object):
 				strides=(1, 1),
 				padding='same',
 		         	activation='relu')(conv31)
-
+		conv32 = BatchNormalization()(conv32)
 		conv32_crop = conv32 #Cropping2D(cropping=((4, 5), (4, 5)))(conv32)
 
 		pool3 = MaxPooling2D(pool_size=(2, 2))(conv32)
@@ -86,7 +87,8 @@ class UNetRegressor(object):
 				strides=(1, 1),
 				padding='same',
 		         	activation='relu')(bnconv1)
-	
+		bnconv2 = BatchNormalization()(bnconv2)
+
 		up1 = UpSampling2D(size=(2,2))(bnconv2)
 
 		merge1 = Concatenate()([up1, conv32_crop])
@@ -102,7 +104,9 @@ class UNetRegressor(object):
 				strides=(1, 1),
 				padding='same',
 		         	activation='relu')(deconv31)
-	
+
+		deconv32 = BatchNormalization()(deconv32)
+
 		up2 = UpSampling2D(size=(2,2))(deconv32)
 
 		merge2 = Concatenate()([up2, conv22_crop])
@@ -118,6 +122,8 @@ class UNetRegressor(object):
 				strides=(1, 1),
 				padding='same',
 		         	activation='relu')(deconv21)
+
+		deconv22 = BatchNormalization()(deconv22)
 
 		up3 = UpSampling2D(size=(2,2))(deconv22)
 
@@ -135,12 +141,15 @@ class UNetRegressor(object):
 				padding='same',
 		         	activation='relu')(deconv11)
 
+		deconv12 = BatchNormalization()(deconv12)
+
 		output = Conv2D(400,
 				kernel_size=(1, 1),
 				strides=(1, 1),
 				padding='same',
 		         	activation='relu')(deconv12)
 
+		output = Activation('softmax')(output)
 		dummy = Conv2D(1,
 				kernel_size=(1, 1),
 				strides=(1, 1),
@@ -151,7 +160,7 @@ class UNetRegressor(object):
 		batch_size = 10
 		h = 256
 		w = 256
-		num_classes = 400
+		num_classes = 100
 
 		''''
 		def output_shape(input_shape):
@@ -174,12 +183,13 @@ class UNetRegressor(object):
 
 		#batch_size, h, w, num_classes = output.shape
 
-		output = Reshape((h * w, num_classes))(output)
-		output = Dense(num_classes, activation="softmax")(output)
 
-		dummy = Reshape((h * w, 1))(dummy)
-		output = Concatenate()([output, dummy])
-		output = Reshape((h, w, num_classes + 1))(output)
+		#output = Reshape((h * w, num_classes))(output)
+		#output = Dense(num_classes, activation="softmax")(output)
+
+		#dummy = Reshape((h * w, 1))(dummy)
+		#output = Concatenate()([output, dummy])
+		#output = Reshape((h, w, num_classes))(output)
 
 		model = Model(input=inputs, output=output)
 
