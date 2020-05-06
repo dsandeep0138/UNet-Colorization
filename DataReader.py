@@ -3,14 +3,17 @@ import glob
 import numpy as np
 import os
 import random
+from sklearn.preprocessing import OneHotEncoder
+from keras.utils import to_categorical
 
-
-def data_generator(img_dir, batch_size):
+def data_generator(img_dir, batch_size, dictionary):
     # Get all the image file names in data_dir
     filenames = glob.glob(img_dir + "/*")
 
     # Set seed for reproducibility
     random.seed(97)
+
+    #print(weights.shape)
 
     counter = 0
     while True:
@@ -38,7 +41,48 @@ def data_generator(img_dir, batch_size):
         y = np.array(y)
         x = np.array(x).reshape((batch_size, 256, 256, 1))
 
-        yield (x, y)
+        print(y.shape)
+        print(y[0][0][0])
+
+        binSpace = np.linspace(0, 256, 21)
+        weights = []
+        cat = []
+        bins = [0,8,14,20,25,106,143,139,179,159,189,199,209,219,248,265,259,283,307,323,334,341,380,384,23]
+        closestBins = findClosestBins(bins)
+        for image_ab in y:
+            y_bin = np.digitize(image_ab, binSpace) - 1
+            y_bin = y_bin[:, :, 0] * 20 + y_bin[:, :, 1]
+            # print("Image bin - output", y_bin)
+            #y_bin = np.vectorize(closestBins.get)(y_bin)
+            #print("Y_BIN", y_bin)
+            #y_bin = np.vectorize(bins.index)(y_bin)
+            #print("Y_BIN_WITH_INDEX", y_bin)
+#            print(y_bin.shape)
+            #unique, counts = np.unique(y_bin, return_counts=True)
+            #map = dict(zip(unique, counts))
+#            print(map)
+            y_cat = to_categorical(y_bin, num_classes=400)
+            # print("Image bin categorical", y_cat)
+
+            #print(y_cat.shape)
+            #print(y_cat)
+ 
+            y_bin = np.vectorize(dictionary.get)(y_bin)
+            #print(y_bin.shape)
+            #print(y_bin)
+            #exit(0)
+            # print(y_cat.shape)
+            cat.append(y_cat)
+            weights.append(y_bin)
+
+        cat = np.array(cat)
+        weights = np.array(weights).reshape((batch_size, 256, 256, 1))
+        #print(cat.shape)
+        #print(weights.shape)
+        #weights = np.concatenate((cat, weights), axis=3)
+        #print(weights.shape)
+
+        yield (x, cat)
         counter += 1
 
 
@@ -82,3 +126,20 @@ def load_data(data_dir, test_dir):
     x_test = np.array(x_test).reshape((len(x_test), 256, 256, 1))
 
     return x_train, y_train, x_test, y_test
+
+def findClosestBins(bins):
+    binDict = {}
+    for b in range(400):
+        if b in bins:
+            binDict[b] = b
+        else:
+            minDistance = 1000000
+            bin_alpha = 13*(b//20)+6
+            bin_beta = 13*(b%20)+6
+            for otherBin in bins:
+                otherBin_alpha = 13 * (otherBin // 20) + 6
+                otherBin_beta = 13 * (otherBin % 20) + 6
+                if (otherBin_alpha - bin_alpha)*(otherBin_alpha - bin_alpha) + (otherBin_beta - bin_beta)*(otherBin_beta - bin_beta) < minDistance:
+                    minDistance = (otherBin_alpha - bin_alpha)*(otherBin_alpha - bin_alpha) + (otherBin_beta - bin_beta)*(otherBin_beta - bin_beta)
+                    binDict[b] = otherBin
+    return binDict

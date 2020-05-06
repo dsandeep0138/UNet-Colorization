@@ -7,8 +7,8 @@ class Properties:
             self.model_dir = "/content/drive/My Drive/UNet-Colorization/models/"
             self.log_dir = "/content/drive/My Drive/UNet-Colorization/data/logs/"
         else :
-            self.data_dir = "./data/beach"
-            self.test_dir = "./data/test"
-            self.results_dir = "./data/results/"
-            self.model_dir = "./data/models/"
-            self.log_dir = "./data/logs/"            
+            self.data_dir = "./../data/beach"
+            self.test_dir = "./../data/test"
+            self.results_dir = "./../data/results/"
+            self.model_dir = "./../data/models/"
+            self.log_dir = "./../data/logs/"            
