@@ -1,10 +1,7 @@
-import cv2
-import glob
+import cv2, glob, os, random
 import numpy as np
-import os
-import random
-from sklearn.preprocessing import OneHotEncoder
 from keras.utils import to_categorical
+from sklearn.preprocessing import OneHotEncoder
 
 def data_generator(img_dir, batch_size, dictionary):
     # Get all the image file names in data_dir
@@ -12,8 +9,6 @@ def data_generator(img_dir, batch_size, dictionary):
 
     # Set seed for reproducibility
     random.seed(97)
-
-    #print(weights.shape)
 
     counter = 0
     while True:
@@ -41,9 +36,6 @@ def data_generator(img_dir, batch_size, dictionary):
         y = np.array(y)
         x = np.array(x).reshape((batch_size, 256, 256, 1))
 
-        print(y.shape)
-        print(y[0][0][0])
-
         binSpace = np.linspace(0, 256, 21)
         weights = []
         cat = []
@@ -52,35 +44,13 @@ def data_generator(img_dir, batch_size, dictionary):
         for image_ab in y:
             y_bin = np.digitize(image_ab, binSpace) - 1
             y_bin = y_bin[:, :, 0] * 20 + y_bin[:, :, 1]
-            # print("Image bin - output", y_bin)
-            #y_bin = np.vectorize(closestBins.get)(y_bin)
-            #print("Y_BIN", y_bin)
-            #y_bin = np.vectorize(bins.index)(y_bin)
-            #print("Y_BIN_WITH_INDEX", y_bin)
-#            print(y_bin.shape)
-            #unique, counts = np.unique(y_bin, return_counts=True)
-            #map = dict(zip(unique, counts))
-#            print(map)
-            y_cat = to_categorical(y_bin, num_classes=400)
-            # print("Image bin categorical", y_cat)
-
-            #print(y_cat.shape)
-            #print(y_cat)
- 
+            y_cat = to_categorical(y_bin, num_classes = 400)
             y_bin = np.vectorize(dictionary.get)(y_bin)
-            #print(y_bin.shape)
-            #print(y_bin)
-            #exit(0)
-            # print(y_cat.shape)
             cat.append(y_cat)
             weights.append(y_bin)
 
         cat = np.array(cat)
         weights = np.array(weights).reshape((batch_size, 256, 256, 1))
-        #print(cat.shape)
-        #print(weights.shape)
-        #weights = np.concatenate((cat, weights), axis=3)
-        #print(weights.shape)
 
         yield (x, cat)
         counter += 1
