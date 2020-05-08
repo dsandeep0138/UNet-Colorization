@@ -73,7 +73,7 @@ def data_generator(img_dir, batch_size, dictionary):
         weights = np.concatenate((cat, weights), axis=3)
         print(weights.shape)
 
-        yield (x, y)
+        yield (x, weights)
         counter += 1
 
 
