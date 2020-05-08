@@ -3,11 +3,15 @@ from keras.layers import Input, Reshape, Dense, Concatenate, Cropping2D, Activat
 from keras.layers.core import Lambda
 import keras.backend as K
 
-class UNetRegressor(object):
+class UNetClassifier(object):
 
-	def __init__(self, num_layers, num_filters):
+	def __init__(self,
+		     num_layers,
+		     num_filters,
+		     num_classes):
 		self.num_layers = num_layers
 		self.num_filters = num_filters
+		self.num_classes = num_classes
 
 	def build_model(self):
 
@@ -23,131 +27,76 @@ class UNetRegressor(object):
 		# Step 6: Add conv with filters 2 and relu activation at the end
 		# Step 7: Add all the skip connections
 
-		conv11 = Conv2D(64,
-				kernel_size=(3, 3),
-				strides=(1, 1),
-				padding='same',
-				activation='relu')(inputs)
+		output = inputs
+		conv_layers = []
 
-		conv12 = Conv2D(64,
-				kernel_size=(3, 3),
-				strides=(1, 1),
-				padding='same',
-		         	activation='relu')(conv11)
-
-		conv12 = BatchNormalization()(conv12)
-		conv12_crop = conv12 #Cropping2D(cropping=((42, 42), (42, 42)))(conv12)
+		# Downsampling layers
+		for i in range(self.num_layers):
+			conv1 = Conv2D(self.num_filters,
+				       kernel_size=(3, 3),
+				       strides=(1, 1),
+				       padding='same',
+				       activation='relu')(output)
+			
+			conv2 = Conv2D(self.num_filters,
+				       kernel_size=(3, 3),
+				       strides=(1, 1),
+				       padding='same',
+				       activation='relu')(conv1)
 		
-		# Default value of strides is pool_size and this would halve the input.
-		pool1 = MaxPooling2D(pool_size=(2, 2))(conv12)
+			conv2 = BatchNormalization()(conv2)
+			conv_layers.append(conv2)	
+	
+			# Default value of strides is pool_size
+			# This would halve the input.
+			output = MaxPooling2D(pool_size=(2, 2))(conv2)
 
-		conv21 = Conv2D(128,
-				kernel_size=(3, 3),
-				strides=(1, 1),
-				padding='same',
-				activation='relu')(pool1)
-
-		conv22 = Conv2D(128,
-				kernel_size=(3, 3),
-				strides=(1, 1),
-				padding='same',
-		         	activation='relu')(conv21)
-
-		conv22_crop = conv22 #Cropping2D(cropping=((17, 17), (17, 17)))(conv22)
-		conv22 = BatchNormalization()(conv22)
-		pool2 = MaxPooling2D(pool_size=(2, 2))(conv22)
-
-		conv31 = Conv2D(256,
-				kernel_size=(3, 3),
-				strides=(1, 1),
-				padding='same',
-				activation='relu')(pool2)
-
-		conv32 = Conv2D(256,
-				kernel_size=(3, 3),
-				strides=(1, 1),
-				padding='same',
-		         	activation='relu')(conv31)
-		conv32 = BatchNormalization()(conv32)
-		conv32_crop = conv32 #Cropping2D(cropping=((4, 5), (4, 5)))(conv32)
-
-		pool3 = MaxPooling2D(pool_size=(2, 2))(conv32)
+			self.num_filters *= 2
 
 		# Bottleneck block
-		bottleneck = pool3
+		bottleneck = output
 
-		bnconv1 = Conv2D(512,
+		bnconv1 = Conv2D(self.num_filters,
 				kernel_size=(3, 3),
 				strides=(1, 1),
 				padding='same',
 				activation='relu')(bottleneck)
 
-		bnconv2 = Conv2D(512,
+		bnconv2 = Conv2D(self.num_filters,
 				kernel_size=(3, 3),
 				strides=(1, 1),
 				padding='same',
 		         	activation='relu')(bnconv1)
-		bnconv2 = BatchNormalization()(bnconv2)
+		output = BatchNormalization()(bnconv2)
 
-		up1 = UpSampling2D(size=(2,2))(bnconv2)
+		# Upsampling layers
+		for i in range(self.num_layers):
+			self.num_filters = self.num_filters // 2
 
-		merge1 = Concatenate()([up1, conv32_crop])
+			up = UpSampling2D(size=(2, 2))(output)
 
-		deconv31 = Conv2D(256,
-				kernel_size=(3, 3),
-				strides=(1, 1),
-				padding='same',
-				activation='relu')(merge1)
-
-		deconv32 = Conv2D(256,
-				kernel_size=(3, 3),
-				strides=(1, 1),
-				padding='same',
-		         	activation='relu')(deconv31)
-
-		deconv32 = BatchNormalization()(deconv32)
-
-		up2 = UpSampling2D(size=(2,2))(deconv32)
-
-		merge2 = Concatenate()([up2, conv22_crop])
+			merge = Concatenate()([up, conv_layers.pop()])
 		
-		deconv21 = Conv2D(128,
-				kernel_size=(3, 3),
-				strides=(1, 1),
-				padding='same',
-				activation='relu')(merge2)
+			deconv1 = Conv2D(self.num_filters,
+					 kernel_size=(3, 3),
+					 strides=(1, 1),
+					 padding='same',
+					 activation='relu')(merge)
 
-		deconv22 = Conv2D(128,
-				kernel_size=(3, 3),
-				strides=(1, 1),
-				padding='same',
-		         	activation='relu')(deconv21)
+			deconv2 = Conv2D(self.num_filters,
+					 kernel_size=(3, 3),
+					 strides=(1, 1),
+					 padding='same',
+		         		 activation='relu')(deconv1)
 
-		deconv22 = BatchNormalization()(deconv22)
-
-		up3 = UpSampling2D(size=(2,2))(deconv22)
-
-		merge3 = Concatenate()([up3, conv12_crop])
-
-		deconv11 = Conv2D(64,
-				kernel_size=(3, 3),
-				strides=(1, 1),
-				padding='same',
-				activation='relu')(merge3)
-
-		deconv12 = Conv2D(64,
-				kernel_size=(3, 3),
-				strides=(1, 1),
-				padding='same',
-		         	activation='relu')(deconv11)
-
-		deconv12 = BatchNormalization()(deconv12)
-
-		output = Conv2D(400,
+			output = BatchNormalization()(deconv2)
+	
+		# Final softmax layer
+		output = Conv2D(self.num_classes,
 				kernel_size=(1, 1),
 				strides=(1, 1),
 				padding='same',
-		         	activation='relu')(deconv12)
+		         	activation='relu')(output)
 
 		output = Activation('softmax')(output)
 

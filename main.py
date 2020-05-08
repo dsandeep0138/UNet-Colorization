@@ -1,7 +1,7 @@
 from DataReader import load_data, data_generator
 from keras import optimizers
 from keras.callbacks import TensorBoard, ModelCheckpoint
-from Network import UNetRegressor
+from Network import UNetClassifier
 from time import time
 from properties import Properties
 import cv2, os, sys
@@ -19,7 +19,9 @@ def main():
 
     x_train, y_train, x_test, y_test = load_data(properties.data_dir, properties.test_dir)
 
-    model = UNetRegressor(64, 3).build_model()
+    model = UNetClassifier(num_layers = 3,
+			   num_filters = 64,
+			   num_classes = 400).build_model()
 
     def huber_loss(y_true, y_pred, clip_delta=1.0):
         error = y_true - y_pred
