@@ -6,3 +6,5 @@ Implementation of Colorization using U-Net architecture and further experiments 
   <img src="Architecture.jpg" width="800">
 </h3>
 
+# References
+https://arxiv.org/abs/1505.04597
