@@ -8,3 +8,5 @@ Implementation of Colorization using U-Net architecture and further experiments 
 
 # References
 https://arxiv.org/abs/1505.04597
+
+https://github.com/soumith/ganhacks
