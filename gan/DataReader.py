@@ -17,7 +17,7 @@ def data_generator(img_dir, batch_size):
         x, y = ([] for _ in range(2))
 
         # Randomly shuffle the data
-        random.shuffle(filenames)
+        np.random.shuffle(filenames)
 
         if (counter + 1) * batch_size >= len(filenames):
             counter = 0
@@ -51,8 +51,8 @@ def load_data(data_dir, test_dir):
     filenames = glob.glob(data_dir + "/*")
 
     # Random shuffle the data and set seed for reproducibility
-    #random.seed(97)
-    random.shuffle(filenames)
+    np.random.seed(97)
+    np.random.shuffle(filenames)
 
     for i, filename in enumerate(filenames):
         image = cv2.imread(filename)
@@ -79,7 +79,6 @@ def load_data(data_dir, test_dir):
         image = cv2.imread(test_file)
         image = cv2.resize(image, (256, 256))
 
-        #image = image.astype('float32') / 255
         lab_image = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
 
         y_test.append(lab_image[:, :, 1:])
