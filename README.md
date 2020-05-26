@@ -3,7 +3,12 @@ Implementation of Colorization using U-Net architecture and further experiments 
 
 # Architecture
 <h3 align="center">
-  <img src="Architecture.jpg" width="800">
+  <img src="images/Architecture.jpg" width="800">
+</h3>
+
+# Colorized images (Different approaches)
+<h3 align="center">
+  <img src="images/results.png" width="800">
 </h3>
 
 # References
