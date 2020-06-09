@@ -7,8 +7,6 @@ class Properties:
             self.model_dir = "/content/drive/My Drive/DL-project/data/gan/beach/models/"
             self.log_dir = "/content/drive/My Drive/DL-project/data/gan/beach/logs/"
         else :
-            #self.data_dir = "./../data/beach"
-            #self.test_dir = "./../data/test"
             self.data_dir = "./data/beach/train/"
             self.test_dir = "./data/beach/test/"
             self.results_dir = "./data/beach/results/"

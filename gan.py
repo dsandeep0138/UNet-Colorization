@@ -1,8 +1,6 @@
-import cv2
-import os
+import cv2, gc, os, sys
 import numpy as np
 import tensorflow as tf
-import sys
 from DataReader import load_data, data_generator
 from keras import optimizers
 from keras.callbacks import TensorBoard, ModelCheckpoint
@@ -27,13 +25,9 @@ def main():
     gen_model = GanGenerator(64, 3).build_model()
     disc_model = GanDiscriminator(64, 3).build_model()
 
-    gen_model.compile(optimizer=optimizers.Adam(lr=0.0001, beta_1=0.9),
-                        loss='binary_crossentropy',
-		        metrics=["accuracy"])
-
-    disc_model.compile(optimizer=optimizers.Adam(lr=0.001, beta_1=0.9),
-		        loss='binary_crossentropy',
-		        metrics=["accuracy"])
+    disc_model.compile(optimizer=optimizers.Adam(lr=0.003, beta_1=0.5),
+		       loss='binary_crossentropy',
+		       metrics=["accuracy"])
 
     gan_input = Input(shape=(256, 256, 1))
 
@@ -41,11 +35,13 @@ def main():
     img_color = gen_model(gan_input)
     real_or_fake = disc_model(img_color)
     gan = Model(gan_input, real_or_fake)
-    gan.compile(optimizer=optimizers.Adam(lr=0.0001, beta_1=0.9),
+    gan.compile(optimizer=optimizers.Adam(lr=0.0003, beta_1=0.5),
 		loss='binary_crossentropy',
 		metrics=["accuracy"])
 
     gan.summary()
+
+    gc.collect()
 
     train(x_train, y_train, 50, gan, gen_model, disc_model, properties)
 
@@ -67,14 +63,15 @@ def train(X_train_L, X_train_AB, epochs, gan, gen_model, disc_model, properties)
     y_train_fake = np.zeros([n, 1])
     y_train_real = np.ones([n, 1])
     y_real_fake = np.zeros([2 * n, 1])
-    y_real_fake[:n] = np.random.uniform(low=0.9, high=1, size=(n, 1))
+    y_real_fake[:n] = np.random.uniform(low=0.7, high=1, size=(n, 1))
 
-    np.random.seed(97)
+    #np.random.seed(97)
 
     for epoch in range(1, epochs + 1):
         print("Epoch %d" % epoch)
 
         np.random.shuffle(X_train)
+        np.random.shuffle(X_train_AB)
 
         if epoch % 3 == 0:
             noise = np.random.uniform(-1, 1, (n, 256, 256, 1))
@@ -82,13 +79,14 @@ def train(X_train_L, X_train_AB, epochs, gan, gen_model, disc_model, properties)
         else:
             generated_images = gen_model.predict(X_train[:n], verbose=1)
 
-        np.random.shuffle(X_train_AB)
         disc_model.trainable = True
         real_fake = np.concatenate((X_train_AB[:n], generated_images))
-        d_loss = disc_model.fit(x=real_fake, y=y_real_fake, batch_size=32, epochs=1)
-        
+        d_loss = disc_model.fit(x=real_fake, y=y_real_fake, batch_size=16, epochs=1)
+        gc.collect()
+
         disc_model.trainable = False
-        gan_metrics = gan.fit(x=X_train[:2 * n], y=np.ones([2 * n, 1]), batch_size=32, epochs=1)
+        gan_metrics = gan.fit(x=X_train[:2 * n], y=np.ones([2 * n, 1]), batch_size=16, epochs=1)
+        gc.collect()
 
 
 if __name__ == "__main__":
