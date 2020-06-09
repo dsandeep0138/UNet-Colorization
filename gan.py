@@ -63,9 +63,9 @@ def train(X_train_L, X_train_AB, epochs, gan, gen_model, disc_model, properties)
     y_train_fake = np.zeros([n, 1])
     y_train_real = np.ones([n, 1])
     y_real_fake = np.zeros([2 * n, 1])
-    y_real_fake[:n] = np.random.uniform(low=0.7, high=1, size=(n, 1))
+    y_real_fake[:n] = np.random.uniform(low=0.9, high=1, size=(n, 1))
 
-    #np.random.seed(97)
+    np.random.seed(97)
 
     for epoch in range(1, epochs + 1):
         print("Epoch %d" % epoch)
@@ -74,19 +74,26 @@ def train(X_train_L, X_train_AB, epochs, gan, gen_model, disc_model, properties)
         np.random.shuffle(X_train_AB)
 
         if epoch % 3 == 0:
-            noise = np.random.uniform(-1, 1, (n, 256, 256, 1))
-            generated_images = gen_model.predict(noise, verbose=1)
+            noise = X_train + 0.5 * np.random.normal(loc=0.0, scale=1.0, size=X_train.shape)
+            noise = np.clip(noise, 0., 1.) * 2 - 1.
+            generated_images = gen_model.predict(noise[:n], verbose=1)
         else:
             generated_images = gen_model.predict(X_train[:n], verbose=1)
 
         disc_model.trainable = True
         real_fake = np.concatenate((X_train_AB[:n], generated_images))
-        d_loss = disc_model.fit(x=real_fake, y=y_real_fake, batch_size=16, epochs=1)
-        gc.collect()
+        d_loss = disc_model.fit(x=real_fake,
+                                y=y_real_fake,
+                                batch_size=16,
+                                shuffle=True,
+                                epochs=1)
 
         disc_model.trainable = False
-        gan_metrics = gan.fit(x=X_train[:2 * n], y=np.ones([2 * n, 1]), batch_size=16, epochs=1)
-        gc.collect()
+        gan_metrics = gan.fit(x=X_train[:2 * n],
+                              y=np.ones([2 * n, 1]),
+                              batch_size=16,
+                              shuffle=True,
+                              epochs=1)
 
 
 if __name__ == "__main__":

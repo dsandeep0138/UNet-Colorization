@@ -120,57 +120,56 @@ class GanGenerator(object):
         inputs = Input(shape=(256, 256, 1), name = 'image_input')
         init = initializers.RandomNormal(stddev=0.02)
 
-        '''
         conv1 = Conv2D(64,
                         kernel_size=(5, 5),
                         strides=(1, 1),
+                        use_bias=False,
                         kernel_initializer=init,
                         padding='same')(inputs)
         conv1 = BatchNormalization()(conv1)
         conv1 = Activation(LeakyReLU(0.2))(conv1)
-        '''
 
         conv11 = Conv2D(128,
                         kernel_size=(5, 5),
-                        strides=(1, 1),
+                        strides=(2, 2),
                         use_bias=False,
                         kernel_initializer=init,
-                        padding='same')(inputs)
-        conv11 = BatchNormalization()(conv11, training=1)
+                        padding='same')(conv1)
+        conv11 = BatchNormalization()(conv11)
         conv11 = Activation(LeakyReLU(0.2))(conv11)
 
         conv21 = Conv2D(256,
-                        kernel_size=(5, 5),
+                        kernel_size=(3, 3),
                         strides=(2, 2),
                         use_bias=False,
                         kernel_initializer=init,
                         padding='same')(conv11)
-        conv21 = BatchNormalization()(conv21, training=1)
+        conv21 = BatchNormalization()(conv21)
         conv21 = Activation(LeakyReLU(0.2))(conv21)
 
         conv31 = Conv2D(512,
-                        kernel_size=(5, 5),
+                        kernel_size=(3, 3),
                         strides=(2, 2),
                         use_bias=False,
                         kernel_initializer=init,
                         padding='same')(conv21)
-        conv31 = BatchNormalization()(conv31, training=1)
+        conv31 = BatchNormalization()(conv31)
         conv31 = Activation(LeakyReLU(0.2))(conv31)
 
         # Bottleneck block
         bottleneck = conv31
 
-        bnconv1 = Conv2D(1024,
-                        kernel_size=(5, 5),
+        bnconv1 = Conv2D(512,
+                        kernel_size=(3, 3),
                         strides=(2, 2),
                         use_bias=False,
                         kernel_initializer=init,
                         padding='same')(bottleneck)
-        bnconv1 = BatchNormalization()(bnconv1, training=1)
+        bnconv1 = BatchNormalization()(bnconv1)
         bnconv1 = Activation(LeakyReLU(0.2))(bnconv1)
 
         convtrans31 = Conv2DTranspose(512,
-                        kernel_size=(5, 5),
+                        kernel_size=(3, 3),
                         strides=(2, 2),
                         use_bias=False,
                         kernel_initializer=init,
@@ -180,17 +179,17 @@ class GanGenerator(object):
         merge1 = Dropout(0.3)(merge1)
 
         deconv31 = Conv2D(512,
-                        kernel_size=(5, 5),
+                        kernel_size=(3, 3),
                         strides=(1, 1),
                         use_bias=False,
                         kernel_initializer=init,
                         padding='same')(merge1)
-        deconv31 = BatchNormalization()(deconv31, training=1)
+        deconv31 = BatchNormalization()(deconv31)
         deconv31 = Dropout(0.3)(deconv31)
         deconv31 = Activation(LeakyReLU(0.2))(deconv31)
 
         convtrans21 = Conv2DTranspose(256,
-                        kernel_size=(5, 5),
+                        kernel_size=(3, 3),
                         strides=(2, 2),
                         use_bias=False,
                         kernel_initializer=init,
@@ -200,17 +199,17 @@ class GanGenerator(object):
         merge2 = Dropout(0.3)(merge2)
 
         deconv21 = Conv2D(256,
-                        kernel_size=(5, 5),
+                        kernel_size=(3, 3),
                         strides=(1, 1),
                         use_bias=False,
                         kernel_initializer=init,
                         padding='same')(merge2)
-        deconv21 = BatchNormalization()(deconv21, training=1)
+        deconv21 = BatchNormalization()(deconv21)
         deconv21 = Dropout(0.3)(deconv21)
         deconv21 = Activation(LeakyReLU(0.2))(deconv21)
 
         convtrans11 = Conv2DTranspose(128,
-                        kernel_size=(5, 5),
+                        kernel_size=(3, 3),
                         strides=(2, 2),
                         use_bias=False,
                         kernel_initializer=init,
@@ -220,19 +219,19 @@ class GanGenerator(object):
         merge3 = Dropout(0.3)(merge3)
 
         deconv11 = Conv2D(128,
-                        kernel_size=(5, 5),
+                        kernel_size=(3, 3),
                         strides=(1, 1),
                         use_bias=False,
                         kernel_initializer=init,
                         padding='same')(merge3)
-        deconv11 = BatchNormalization()(deconv11, training=1)
+        deconv11 = BatchNormalization()(deconv11)
         deconv11 = Dropout(0.3)(deconv11)
         deconv11 = Activation(LeakyReLU(0.2))(deconv11)
 
-        '''
-        convtrans1 = Conv2DTranspose(128,
-                        kernel_size=(5, 5),
+        convtrans1 = Conv2DTranspose(64,
+                        kernel_size=(3, 3),
                         strides=(2, 2),
+                        use_bias=False,
                         kernel_initializer=init,
                         padding='same')(deconv11)
 
@@ -240,14 +239,14 @@ class GanGenerator(object):
         merge4 = Dropout(0.3)(merge4)
 
         deconv1 = Conv2D(64,
-                        kernel_size=(5, 5),
+                        kernel_size=(3, 3),
                         strides=(1, 1),
+                        use_bias=False,
                         kernel_initializer=init,
                         padding='same')(merge4)
         deconv1 = BatchNormalization()(deconv1)
         deconv1 = Dropout(0.3)(deconv1)
-        deconv1 = Activation('relu')(deconv1)
-        '''
+        deconv1 = Activation(LeakyReLU(0.1))(deconv1)
 
         output = Conv2D(2,
                         kernel_size=(5, 5),
@@ -255,7 +254,7 @@ class GanGenerator(object):
                         use_bias=False,
                         kernel_initializer=init,
                         padding='same',
-                        activation='tanh')(deconv11)
+                        activation='tanh')(deconv1)
 
         model = Model(input=inputs, output=output)
 
@@ -281,7 +280,7 @@ class GanDiscriminator(object):
                         use_bias=False,
                         kernel_initializer=init,
                         padding='same')(inputs)
-        conv11 = BatchNormalization()(conv11, training=1)
+        conv11 = BatchNormalization()(conv11)
         conv11 = Activation(LeakyReLU(0.2))(conv11)
 
         conv21 = Conv2D(128,
@@ -290,7 +289,7 @@ class GanDiscriminator(object):
                         use_bias=False,
                         kernel_initializer=init,
                         padding='same')(conv11)
-        conv21 = BatchNormalization()(conv21, training=1)
+        conv21 = BatchNormalization()(conv21)
         conv21 = Activation(LeakyReLU(0.2))(conv21)
 
         conv31 = Conv2D(256,
@@ -299,8 +298,9 @@ class GanDiscriminator(object):
                         use_bias=False,
                         kernel_initializer=init,
                         padding='same')(conv21)
-        conv31 = BatchNormalization()(conv31, training=1)
+        conv31 = BatchNormalization()(conv31)
         conv31 = Activation(LeakyReLU(0.2))(conv31)
+        conv31 = Dropout(0.2)(conv31)
 
         conv41 = Conv2D(512,
                         kernel_size=(4, 4),
@@ -308,8 +308,9 @@ class GanDiscriminator(object):
                         use_bias=False,
                         kernel_initializer=init,
                         padding='same')(conv31)
-        conv41 = BatchNormalization()(conv41, training=1)
+        conv41 = BatchNormalization()(conv41)
         conv41 = Activation(LeakyReLU(0.2))(conv41)
+        conv41 = Dropout(0.2)(conv41)
 
         conv51 = Conv2D(1024,
                         kernel_size=(4, 4),
@@ -317,12 +318,15 @@ class GanDiscriminator(object):
                         use_bias=False,
                         kernel_initializer=init,
                         padding='same')(conv41)
-        conv51 = BatchNormalization()(conv51, training=1)
+        conv51 = BatchNormalization()(conv51)
         conv51 = Activation(LeakyReLU(0.2))(conv51)
         conv51 = Dropout(0.4)(conv51)
 
         output = Flatten()(conv51)
-        output = Dense(1, kernel_initializer=init)(output)
+        output = Dense(1,
+                       kernel_initializer=init,
+                       use_bias=False)(output)
+        output = BatchNormalization()(output)
         output = Activation('sigmoid')(output)
 
         model = Model(input=inputs, output=output)
