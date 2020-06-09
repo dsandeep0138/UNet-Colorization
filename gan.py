@@ -60,10 +60,8 @@ def train(X_train_L, X_train_AB, epochs, gan, gen_model, disc_model, properties)
     n = X_train_L.shape[0] // 8
 
     X_train = np.expand_dims(X_train_L, axis=-1)
-    y_train_fake = np.zeros([n, 1])
-    y_train_real = np.ones([n, 1])
     y_real_fake = np.zeros([2 * n, 1])
-    y_real_fake[:n] = np.random.uniform(low=0.9, high=1, size=(n, 1))
+    y_real_fake[:n] = np.random.uniform(low=0.7, high=1.2, size=(n, 1))
 
     np.random.seed(97)
 
@@ -74,8 +72,8 @@ def train(X_train_L, X_train_AB, epochs, gan, gen_model, disc_model, properties)
         np.random.shuffle(X_train_AB)
 
         if epoch % 3 == 0:
-            noise = X_train + 0.5 * np.random.normal(loc=0.0, scale=1.0, size=X_train.shape)
-            noise = np.clip(noise, 0., 1.) * 2 - 1.
+            noise = 0.5 * np.random.normal(loc=0.0, scale=1.0, size=X_train.shape)
+            noise = np.clip(noise, -1., 1.)
             generated_images = gen_model.predict(noise[:n], verbose=1)
         else:
             generated_images = gen_model.predict(X_train[:n], verbose=1)
